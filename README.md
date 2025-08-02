@@ -23,8 +23,7 @@ steam-recs/
 │   ├── app.py                         # Main Flask application
 │   ├── setup_db.py                    # Database setup and vector computation
 │   ├── requirements.txt               # Python dependencies
-│   ├── final_dataset_sorted.json      # Dataset .json file
-│   └── .env.example                   # Environment variables template
+│   └──  final_dataset_sorted.json      # Dataset .json file
 ├── frontend/
 │   ├── src/
 │   │   ├── App.js                     # Main React application
@@ -165,3 +164,4 @@ Dataset creation scripts and methodology are detailed in the project report.
 **Faculty of Science, School of Computing Sciences**  
 
 **2025**
+
