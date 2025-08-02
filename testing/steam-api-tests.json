@@ -1,0 +1,527 @@
+{
+	"info": {
+		"_postman_id": "7d5e3f2a-9c12-4e86-b2d7-0f3215678abd",
+		"name": "Steam API Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Tests for Steam API endpoints used in the Steam Game Recommender application"
+	},
+	"item": [
+		{
+			"name": "ResolveVanityURL",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.response).to.exist;",
+							"});",
+							"",
+							"const response = pm.response.json().response;",
+							"",
+							"if (response.success === 1) {",
+							"    pm.test(\"Successfully resolved vanity URL\", function () {",
+							"        pm.expect(response.steamid).to.exist;",
+							"        pm.expect(response.steamid).to.be.a('string');",
+							"        pm.expect(response.steamid).to.match(/^\\d+$/);",
+							"        ",
+							"        // Store Steam ID for future tests",
+							"        pm.environment.set('steamid', response.steamid);",
+							"    });",
+							"} else {",
+							"    pm.test(\"Failed to resolve vanity URL with proper error\", function () {",
+							"        pm.expect(response.success).to.equal(42);",
+							"        pm.expect(response.message).to.exist;",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={{steam_api_key}}&vanityurl={{vanity_url}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"steampowered",
+						"com"
+					],
+					"path": [
+						"ISteamUser",
+						"ResolveVanityURL",
+						"v1",
+						""
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{steam_api_key}}"
+						},
+						{
+							"key": "vanityurl",
+							"value": "{{vanity_url}}"
+						}
+					]
+				},
+				"description": "Resolves a vanity URL (custom profile URL) to a Steam ID"
+			}
+		},
+		{
+			"name": "GetPlayerSummaries",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.response).to.exist;",
+							"    pm.expect(responseData.response.players).to.exist;",
+							"    pm.expect(responseData.response.players).to.be.an('array');",
+							"});",
+							"",
+							"const players = pm.response.json().response.players;",
+							"",
+							"if (players.length > 0) {",
+							"    pm.test(\"Player data contains required fields\", function () {",
+							"        const player = players[0];",
+							"        pm.expect(player.steamid).to.exist;",
+							"        pm.expect(player.communityvisibilitystate).to.exist;",
+							"        pm.expect(player.profilestate).to.exist;",
+							"        pm.expect(player.personaname).to.exist;",
+							"        pm.expect(player.profileurl).to.exist;",
+							"        pm.expect(player.avatar).to.exist;",
+							"    });",
+							"    ",
+							"    // Check if profile is public",
+							"    const player = players[0];",
+							"    if (player.communityvisibilitystate === 3) {",
+							"        pm.environment.set('profile_public', true);",
+							"        console.log(\"Profile is public\");",
+							"    } else {",
+							"        pm.environment.set('profile_public', false);",
+							"        console.log(\"Profile is NOT public\");",
+							"    }",
+							"} else {",
+							"    pm.test(\"No player data found\", function () {",
+							"        pm.expect.fail('No player data in response');",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={{steam_api_key}}&steamids={{steamid}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"steampowered",
+						"com"
+					],
+					"path": [
+						"ISteamUser",
+						"GetPlayerSummaries",
+						"v2",
+						""
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{steam_api_key}}"
+						},
+						{
+							"key": "steamids",
+							"value": "{{steamid}}"
+						}
+					]
+				},
+				"description": "Gets basic profile information for a Steam user"
+			}
+		},
+		{
+			"name": "GetOwnedGames",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.response).to.exist;",
+							"});",
+							"",
+							"const response = pm.response.json().response;",
+							"",
+							"if (response.game_count > 0 && response.games) {",
+							"    pm.test(\"Owned games data is valid\", function () {",
+							"        pm.expect(response.game_count).to.be.a('number');",
+							"        pm.expect(response.game_count).to.equal(response.games.length);",
+							"        ",
+							"        const firstGame = response.games[0];",
+							"        pm.expect(firstGame.appid).to.exist;",
+							"        pm.expect(firstGame.name).to.exist;",
+							"        pm.expect(firstGame.playtime_forever).to.exist;",
+							"        ",
+							"        // Store a game ID for achievement testing",
+							"        if (firstGame.playtime_forever > 0) {",
+							"            pm.environment.set('test_appid', firstGame.appid);",
+							"            console.log(\"Set test app ID: \" + firstGame.appid);",
+							"        }",
+							"    });",
+							"    ",
+							"    pm.test(\"Game data contains app details\", function () {",
+							"        const firstGame = response.games[0];",
+							"        pm.expect(firstGame.name).to.be.a('string');",
+							"        pm.expect(firstGame.img_icon_url).to.exist;",
+							"    });",
+							"} else {",
+							"    // Account may be private or has no games",
+							"    console.log(\"No games found or private profile\");",
+							"    pm.test(\"Response indicates no games or private profile\", function () {",
+							"        if (!pm.environment.get('profile_public')) {",
+							"            console.log(\"Profile is private, as expected\");",
+							"        } else {",
+							"            console.log(\"Profile is public but no games found\");",
+							"            pm.expect(response.game_count).to.equal(0);",
+							"        }",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={{steam_api_key}}&steamid={{steamid}}&format=json&include_appinfo=true",
+					"protocol": "https",
+					"host": [
+						"api",
+						"steampowered",
+						"com"
+					],
+					"path": [
+						"IPlayerService",
+						"GetOwnedGames",
+						"v1",
+						""
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{steam_api_key}}"
+						},
+						{
+							"key": "steamid",
+							"value": "{{steamid}}"
+						},
+						{
+							"key": "format",
+							"value": "json"
+						},
+						{
+							"key": "include_appinfo",
+							"value": "true"
+						}
+					]
+				},
+				"description": "Gets a list of games owned by a Steam user"
+			}
+		},
+		{
+			"name": "GetGlobalAchievementPercentagesForApp",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    ",
+							"    // Some games may not have achievements",
+							"    if (responseData.achievementpercentages) {",
+							"        pm.expect(responseData.achievementpercentages.achievements).to.exist;",
+							"        pm.expect(responseData.achievementpercentages.achievements).to.be.an('array');",
+							"    }",
+							"});",
+							"",
+							"const response = pm.response.json();",
+							"",
+							"if (response.achievementpercentages && ",
+							"    response.achievementpercentages.achievements && ",
+							"    response.achievementpercentages.achievements.length > 0) {",
+							"    ",
+							"    pm.test(\"Achievement data is valid\", function () {",
+							"        const achievements = response.achievementpercentages.achievements;",
+							"        const firstAchievement = achievements[0];",
+							"        ",
+							"        pm.expect(firstAchievement.name).to.exist;",
+							"        pm.expect(firstAchievement.percent).to.exist;",
+							"        pm.expect(firstAchievement.percent).to.be.a('number');",
+							"    });",
+							"    ",
+							"    // Store total achievement count for comparing with player achievements",
+							"    const achievementCount = response.achievementpercentages.achievements.length;",
+							"    pm.environment.set('total_achievements', achievementCount);",
+							"    console.log(\"Total achievements for this game: \" + achievementCount);",
+							"} else {",
+							"    console.log(\"No achievements found for this game\");",
+							"    pm.environment.set('total_achievements', 0);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?key={{steam_api_key}}&gameid={{test_appid}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"steampowered",
+						"com"
+					],
+					"path": [
+						"ISteamUserStats",
+						"GetGlobalAchievementPercentagesForApp",
+						"v2",
+						""
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{steam_api_key}}"
+						},
+						{
+							"key": "gameid",
+							"value": "{{test_appid}}"
+						}
+					]
+				},
+				"description": "Gets global achievement percentages for a specific game"
+			}
+		},
+		{
+			"name": "GetPlayerAchievements",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const response = pm.response.json();",
+							"",
+							"// Check if the response contains achievement data",
+							"if (response.playerstats && ",
+							"    response.playerstats.success === true && ",
+							"    response.playerstats.achievements) {",
+							"    ",
+							"    pm.test(\"Response structure is valid\", function () {",
+							"        pm.expect(response.playerstats.gameName).to.exist;",
+							"        pm.expect(response.playerstats.steamID).to.exist;",
+							"        pm.expect(response.playerstats.achievements).to.be.an('array');",
+							"    });",
+							"    ",
+							"    pm.test(\"Player achievement data is valid\", function () {",
+							"        const achievements = response.playerstats.achievements;",
+							"        ",
+							"        if (achievements.length > 0) {",
+							"            const firstAchievement = achievements[0];",
+							"            pm.expect(firstAchievement.apiname).to.exist;",
+							"            pm.expect(firstAchievement.achieved).to.exist;",
+							"            pm.expect(firstAchievement.achieved).to.be.oneOf([0, 1]);",
+							"            ",
+							"            // Count completed achievements",
+							"            const completedCount = achievements.filter(a => a.achieved === 1).length;",
+							"            pm.environment.set('completed_achievements', completedCount);",
+							"            console.log(`Player has completed ${completedCount} out of ${achievements.length} achievements`);",
+							"        } else {",
+							"            console.log(\"Game has no achievements\");",
+							"            pm.environment.set('completed_achievements', 0);",
+							"        }",
+							"    });",
+							"} else if (response.playerstats && response.playerstats.error) {",
+							"    // Handle error case (e.g., private profile, game not owned)",
+							"    console.log(\"Error fetching achievements: \" + response.playerstats.error);",
+							"    pm.test(\"Error response is valid\", function () {",
+							"        pm.expect(response.playerstats.error).to.be.a('string');",
+							"    });",
+							"} else {",
+							"    pm.test(\"Response indicates no achievements or error\", function () {",
+							"        pm.expect(response).to.be.an('object');",
+							"    });",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={{steam_api_key}}&steamid={{steamid}}&appid={{test_appid}}&l=en",
+					"protocol": "https",
+					"host": [
+						"api",
+						"steampowered",
+						"com"
+					],
+					"path": [
+						"ISteamUserStats",
+						"GetPlayerAchievements",
+						"v1",
+						""
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{steam_api_key}}"
+						},
+						{
+							"key": "steamid",
+							"value": "{{steamid}}"
+						},
+						{
+							"key": "appid",
+							"value": "{{test_appid}}"
+						},
+						{
+							"key": "l",
+							"value": "en"
+						}
+					]
+				},
+				"description": "Gets achievement completion data for a specific player and game"
+			}
+		},
+		{
+			"name": "GetSchemaForGame",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.game).to.exist;",
+							"});",
+							"",
+							"const gameData = pm.response.json().game;",
+							"",
+							"pm.test(\"Game schema contains required fields\", function () {",
+							"    pm.expect(gameData.gameName).to.exist;",
+							"    pm.expect(gameData.gameVersion).to.exist;",
+							"});",
+							"",
+							"if (gameData.availableGameStats) {",
+							"    pm.test(\"Game stats are properly structured\", function () {",
+							"        if (gameData.availableGameStats.achievements) {",
+							"            pm.expect(gameData.availableGameStats.achievements).to.be.an('array');",
+							"            ",
+							"            if (gameData.availableGameStats.achievements.length > 0) {",
+							"                const firstAchievement = gameData.availableGameStats.achievements[0];",
+							"                pm.expect(firstAchievement.name).to.exist;",
+							"                pm.expect(firstAchievement.displayName).to.exist;",
+							"                pm.expect(firstAchievement.description).to.exist;",
+							"            }",
+							"        }",
+							"        ",
+							"        if (gameData.availableGameStats.stats) {",
+							"            pm.expect(gameData.availableGameStats.stats).to.be.an('array');",
+							"        }",
+							"    });",
+							"} else {",
+							"    console.log(\"Game does not have stats or achievements\");",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key={{steam_api_key}}&appid={{test_appid}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"steampowered",
+						"com"
+					],
+					"path": [
+						"ISteamUserStats",
+						"GetSchemaForGame",
+						"v2",
+						""
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{steam_api_key}}"
+						},
+						{
+							"key": "appid",
+							"value": "{{test_appid}}"
+						}
+					]
+				},
+				"description": "Gets the schema for a game, including achievement names and descriptions"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "steam_api_key",
+			"value": "FFDDBED0399C94A26B6EB74A5FC5A551"
+		},
+		{
+			"key": "vanity_url",
+			"value": "yourTestUsername"
+		}
+	]
+}

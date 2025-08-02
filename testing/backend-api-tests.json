@@ -1,0 +1,450 @@
+{
+	"info": {
+		"_postman_id": "5e9b5f8c-8ab3-4e74-a1b6-0a3f1234abcd",
+		"name": "Steam Game Recommender - Backend API Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"description": "Tests for the Steam Game Recommender backend API endpoints"
+	},
+	"item": [
+		{
+			"name": "Get Player Data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.steam_id).to.exist;",
+							"    pm.expect(responseData.games).to.exist;",
+							"    pm.expect(responseData.games).to.be.an('object');",
+							"});",
+							"",
+							"pm.test(\"Games contain appid and playtime\", function () {",
+							"    const responseData = pm.response.json();",
+							"    const gameIds = Object.keys(responseData.games);",
+							"    ",
+							"    if(gameIds.length > 0) {",
+							"        const firstGameId = gameIds[0];",
+							"        pm.expect(firstGameId).to.match(/^\\d+$/);",
+							"        pm.expect(responseData.games[firstGameId]).to.be.a('number');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/player-data?username=yourTestUsername",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"player-data"
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "yourTestUsername"
+						}
+					]
+				},
+				"description": "Fetch player data including owned games and playtime"
+			}
+		},
+		{
+			"name": "Get Player Data - Invalid Username",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400 or 404\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([400, 404]);",
+							"});",
+							"",
+							"pm.test(\"Response contains error message\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData.error).to.exist;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/player-data?username=ThisShouldNotExist12345678",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"player-data"
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "ThisShouldNotExist12345678"
+						}
+					]
+				},
+				"description": "Test error handling for invalid usernames"
+			}
+		},
+		{
+			"name": "Get Player Data - Missing Username",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Response contains error message about missing username\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData.error).to.exist;",
+							"    pm.expect(responseData.error).to.include('Username is required');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/player-data",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"player-data"
+					]
+				},
+				"description": "Test error handling when username parameter is missing"
+			}
+		},
+		{
+			"name": "Get Recommendations",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.recommendations).to.exist;",
+							"    pm.expect(responseData.recommendations).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Recommendations contain required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if(responseData.recommendations.length > 0) {",
+							"        const firstRec = responseData.recommendations[0];",
+							"        pm.expect(firstRec.appid).to.exist;",
+							"        pm.expect(firstRec.name).to.exist;",
+							"        pm.expect(firstRec.similarity).to.exist;",
+							"        pm.expect(firstRec.steam_link).to.exist;",
+							"        ",
+							"        pm.expect(firstRec.appid).to.be.a('number');",
+							"        pm.expect(firstRec.similarity).to.be.a('number');",
+							"        pm.expect(firstRec.steam_link).to.include('https://store.steampowered.com/app/');",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Recommendations are sorted by similarity\", function () {",
+							"    const responseData = pm.response.json();",
+							"    const recs = responseData.recommendations;",
+							"    ",
+							"    if(recs.length > 1) {",
+							"        for(let i = 0; i < recs.length - 1; i++) {",
+							"            pm.expect(recs[i].similarity).to.be.at.least(recs[i+1].similarity);",
+							"        }",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/recommendations?username=yourTestUsername&use_achievements=false",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"recommendations"
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "yourTestUsername"
+						},
+						{
+							"key": "use_achievements",
+							"value": "false"
+						}
+					]
+				},
+				"description": "Get game recommendations for a user"
+			}
+		},
+		{
+			"name": "Get Recommendations with Achievements",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.recommendations).to.exist;",
+							"    pm.expect(responseData.recommendations).to.be.an('array');",
+							"});",
+							"",
+							"// Store recommendations for comparison",
+							"pm.environment.set('achievements_recommendations', JSON.stringify(pm.response.json().recommendations));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/recommendations?username=yourTestUsername&use_achievements=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"recommendations"
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "yourTestUsername"
+						},
+						{
+							"key": "use_achievements",
+							"value": "true"
+						}
+					]
+				},
+				"description": "Get game recommendations with achievement weighting enabled"
+			}
+		},
+		{
+			"name": "Get Games",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.games).to.exist;",
+							"    pm.expect(responseData.games).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Games contain id and name\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if(responseData.games.length > 0) {",
+							"        const firstGame = responseData.games[0];",
+							"        pm.expect(firstGame.id).to.exist;",
+							"        pm.expect(firstGame.name).to.exist;",
+							"        pm.expect(firstGame.id).to.be.a('number');",
+							"        pm.expect(firstGame.name).to.be.a('string');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/games",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"games"
+					]
+				},
+				"description": "Fetch all games from the database"
+			}
+		},
+		{
+			"name": "Get No-Steam Recommendations",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response structure is valid\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData).to.be.an('object');",
+							"    pm.expect(responseData.recommendations).to.exist;",
+							"    pm.expect(responseData.recommendations).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Recommendations contain required fields\", function () {",
+							"    const responseData = pm.response.json();",
+							"    ",
+							"    if(responseData.recommendations.length > 0) {",
+							"        const firstRec = responseData.recommendations[0];",
+							"        pm.expect(firstRec.appid).to.exist;",
+							"        pm.expect(firstRec.name).to.exist;",
+							"        pm.expect(firstRec.similarity).to.exist;",
+							"        pm.expect(firstRec.steam_link).to.exist;",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Recommendations exclude selected games\", function () {",
+							"    const responseData = pm.response.json();",
+							"    const requestData = JSON.parse(pm.request.body.raw);",
+							"    const selectedGameIds = requestData.selectedGames.map(game => game.id);",
+							"    ",
+							"    responseData.recommendations.forEach(rec => {",
+							"        pm.expect(selectedGameIds).to.not.include(rec.appid);",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"selectedGames\": [\n        {\n            \"id\": 1, \n            \"name\": \"Test Game 1\",\n            \"rank\": 1\n        },\n        {\n            \"id\": 2, \n            \"name\": \"Test Game 2\",\n            \"rank\": 2\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/no-steam-recommendations",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"no-steam-recommendations"
+					]
+				},
+				"description": "Get recommendations based on selected games (No Steam account)"
+			}
+		},
+		{
+			"name": "Get No-Steam Recommendations - Empty Selection",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test(\"Response contains error message\", function () {",
+							"    const responseData = pm.response.json();",
+							"    pm.expect(responseData.error).to.exist;",
+							"    pm.expect(responseData.error).to.include('No games selected');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"selectedGames\": []\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/no-steam-recommendations",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"no-steam-recommendations"
+					]
+				},
+				"description": "Test error handling when no games are selected"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000"
+		}
+	]
+}
