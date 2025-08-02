@@ -52,7 +52,7 @@ steam-recs/
 - Python 3.8 or higher
 - Node.js 16 or higher
 - PostgreSQL 12 or higher
-- Steam API Key (free registration required, but for now the key is provided within the .env.example file)
+- Steam API Key
 
 ### Backend Setup
 
@@ -163,4 +163,5 @@ Dataset creation scripts and methodology are detailed in the project report.
 
 **University of East Anglia**  
 **Faculty of Science, School of Computing Sciences**  
+
 **2025**
